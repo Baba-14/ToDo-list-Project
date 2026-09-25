@@ -1,32 +1,7 @@
-// Default initial todos for the app
-const defaultTodos = [
-    {
-        id: 1,
-        title: "ITEM 1",
-        description: "this is an example description",
-        status: "incomplete" // Options: 'incomplete', 'completed', 'pending'
-    },
-    {
-        id: 2,
-        title: "ITEM 2",
-        description: "this item is completed",
-        status: "completed"
-    },
-    {
-        id: 3,
-        title: "ITEM 3",
-        description: "this is an example description",
-        status: "pending"
-    }
-];
+const API_URL = 'http://127.0.0.1:8000/todos';
 
-// Initialize State from LocalStorage or defaults
-let todos = JSON.parse(localStorage.getItem('my_todos')) || defaultTodos;
-
-// Save state helper
-function saveTodos() {
-    localStorage.setItem('my_todos', JSON.stringify(todos));
-}
+// Global state array
+let todos = [];
 
 // DOM Elements
 const todoListContainer = document.getElementById('todo-list');
@@ -37,14 +12,31 @@ const closeModalX = document.getElementById('close-modal-x');
 const taskTitleInput = document.getElementById('task-title');
 const taskDescInput = document.getElementById('task-desc');
 
-// Render Function
+// Step 3.1: Fetch todo data from backend
+async function fetchTodos() {
+    try {
+        const response = await fetch(API_URL);
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        todos = await response.json();
+        renderTodos();
+    } catch (error) {
+        console.error("Failed to fetch todos from backend:", error);
+    }
+}
+
+// Step 3.2: Render returned items in the UI
 function renderTodos() {
     todoListContainer.innerHTML = '';
 
-    // Render regular todo cards
     todos.forEach((todo) => {
+        const isCompleted = todo.completed;
+        const statusClass = isCompleted ? 'completed' : 'incomplete';
+        const statusLabel = isCompleted ? 'Completed' : 'Incomplete';
+
         const card = document.createElement('div');
-        card.className = `todo-card ${todo.status}`;
+        card.className = `todo-card ${statusClass}`;
         card.setAttribute('data-id', todo.id);
 
         const infoDiv = document.createElement('div');
@@ -58,8 +50,8 @@ function renderTodos() {
         title.textContent = todo.title;
 
         const badge = document.createElement('span');
-        badge.className = `status-badge ${todo.status}`;
-        badge.textContent = todo.status;
+        badge.className = `status-badge ${statusClass}`;
+        badge.textContent = statusLabel;
 
         titleRow.appendChild(title);
         titleRow.appendChild(badge);
@@ -75,7 +67,7 @@ function renderTodos() {
         const rightGroup = document.createElement('div');
         rightGroup.className = 'card-right-group';
 
-        // Delete button (SVG Trash)
+        // Delete button
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'delete-btn';
         deleteBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>`;
@@ -90,19 +82,16 @@ function renderTodos() {
         statusBtn.className = 'status-btn';
         statusBtn.title = 'Click to toggle status';
 
-        if (todo.status === 'completed') {
+        if (isCompleted) {
             statusBtn.classList.add('checked');
             statusBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
-        } else if (todo.status === 'pending') {
-            statusBtn.classList.add('pending-icon');
-            statusBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
         } else {
             statusBtn.innerHTML = '';
         }
 
         statusBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            toggleTodoStatus(todo.id);
+            toggleTodoStatus(todo);
         });
 
         rightGroup.appendChild(deleteBtn);
@@ -114,7 +103,7 @@ function renderTodos() {
         todoListContainer.appendChild(card);
     });
 
-    // Render the fixed "+ Add New Task" card at the bottom
+    // Add "+ Add New Task" card button
     const newTaskCard = document.createElement('div');
     newTaskCard.className = 'todo-card new-task-card';
 
@@ -137,27 +126,59 @@ function renderTodos() {
     todoListContainer.appendChild(newTaskCard);
 }
 
-// Cycle status: incomplete -> completed -> pending -> incomplete
-function toggleTodoStatus(id) {
-    todos = todos.map(todo => {
-        if (todo.id === id) {
-            let nextStatus = 'completed';
-            if (todo.status === 'incomplete') nextStatus = 'completed';
-            else if (todo.status === 'completed') nextStatus = 'pending';
-            else nextStatus = 'incomplete';
-            return { ...todo, status: nextStatus };
+// Toggle status via backend API
+async function toggleTodoStatus(todo) {
+    try {
+        const response = await fetch(`${API_URL}/${todo.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title: todo.title,
+                description: todo.description,
+                completed: !todo.completed
+            })
+        });
+        if (response.ok) {
+            fetchTodos();
         }
-        return todo;
-    });
-    saveTodos();
-    renderTodos();
+    } catch (error) {
+        console.error("Failed to update todo status:", error);
+    }
 }
 
-// Delete Todo
-function deleteTodo(id) {
-    todos = todos.filter(todo => todo.id !== id);
-    saveTodos();
-    renderTodos();
+// Add new todo via backend API
+async function addTodo(title, description) {
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title: title,
+                description: description,
+                completed: false
+            })
+        });
+        if (response.ok) {
+            fetchTodos();
+            closeModal();
+        }
+    } catch (error) {
+        console.error("Failed to add todo:", error);
+    }
+}
+
+// Delete todo via backend API
+async function deleteTodo(id) {
+    try {
+        const response = await fetch(`${API_URL}/${id}`, {
+            method: 'DELETE'
+        });
+        if (response.ok) {
+            fetchTodos();
+        }
+    } catch (error) {
+        console.error("Failed to delete todo:", error);
+    }
 }
 
 // Modal Handlers
@@ -185,20 +206,12 @@ addTaskForm.addEventListener('submit', (e) => {
     const descVal = taskDescInput.value.trim();
 
     if (titleVal && descVal) {
-        const newTodo = {
-            id: Date.now(),
-            title: titleVal,
-            description: descVal,
-            status: 'incomplete'
-        };
-        todos.push(newTodo);
-        saveTodos();
-        renderTodos();
-        closeModal();
+        addTodo(titleVal, descVal);
     }
 });
 
-// Initial Render
-renderTodos();
+// Initial Fetch on application load
+fetchTodos();
+
 
 
