@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Todo App</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="header-brand">
+                <div class="brand-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                </div>
+                <h1 class="app-title">My Todo App</h1>
+            </div>
+
+            <div class="profile-badge" id="profile-btn" title="Issah Yusif Babamu">
+                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQz3XbgqPWjpcGeuSXJJq-pOo7acTbDktc7FYvWsLVSUeu3FVFMOxUdOvcj&s=10" alt="Profile" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                <span class="avatar-fallback">IB</span>
+                <span class="profile-name">Issah Yusif</span>
+            </div>
+        </header>
+
+        <main class="content-wrapper">
+            <div id="todo-list" class="todo-list">
+                <!-- Dynamic Todo Cards will be rendered here -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal for adding new task -->
+    <div id="add-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2>Create New Task</h2>
+                <button type="button" class="close-btn" id="close-modal-x">&times;</button>
+            </div>
+            <form id="add-task-form">
+                <div class="form-group">
+                    <label for="task-title">Task Title</label>
+                    <input type="text" id="task-title" placeholder="e.g. Prepare presentation slides" required autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label for="task-desc">Description</label>
+                    <textarea id="task-desc" placeholder="Add detailed notes or requirements..." rows="3" required></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="cancel-modal-btn">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+
+</html>
